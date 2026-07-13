@@ -1,4 +1,5 @@
 import Categories from "@/components/home/Categories";
+import FAQ from "@/components/home/FAQ";
 import FeaturedCourses from "@/components/home/FeaturedCourses";
 import Hero from "@/components/home/Hero";
 import Instructors from "@/components/home/Instructors";
@@ -16,6 +17,7 @@ export default function HomePage() {
       <Statistics />
       <Instructors />
       <Testimonials />
+      <FAQ />
     </>
   );
 }
