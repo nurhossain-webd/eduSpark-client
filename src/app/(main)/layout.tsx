@@ -1,3 +1,5 @@
+import Navbar from "@/components/layout/Navbar";
+
 interface MainLayoutProps {
   children: React.ReactNode;
 }
@@ -5,5 +7,11 @@ interface MainLayoutProps {
 export default function MainLayout({
   children,
 }: Readonly<MainLayoutProps>) {
-  return <>{children}</>;
+  return (
+    <>
+      <Navbar />
+
+      <main>{children}</main>
+    </>
+  );
 }
