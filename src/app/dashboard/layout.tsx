@@ -1,3 +1,5 @@
+import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }
@@ -5,5 +7,13 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({
   children,
 }: Readonly<DashboardLayoutProps>) {
-  return <main>{children}</main>;
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <DashboardSidebar />
+
+      <div className="lg:pl-72">
+        {children}
+      </div>
+    </div>
+  );
 }
