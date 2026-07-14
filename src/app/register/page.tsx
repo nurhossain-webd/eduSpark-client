@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
 import {
   ArrowRight,
   Eye,
@@ -12,6 +11,7 @@ import {
   Mail,
   UserRound,
 } from "lucide-react";
+import { FormEvent, useState } from "react";
 
 interface RegisterFormData {
   name: string;
@@ -27,7 +27,7 @@ interface RegisterErrors {
   confirmPassword?: string[];
 }
 
-interface RegisterResponse {
+interface RegisterApiResponse {
   success: boolean;
   message: string;
   errors?: RegisterErrors;
@@ -47,9 +47,14 @@ export default function RegisterPage() {
     useState<RegisterFormData>(initialFormData);
 
   const [errors, setErrors] = useState<RegisterErrors>({});
-  const [serverMessage, setServerMessage] = useState<string>("");
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [message, setMessage] = useState<string>("");
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] =
+    useState<boolean>(false);
+
+  const [showPassword, setShowPassword] =
+    useState<boolean>(false);
+
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
 
@@ -67,7 +72,8 @@ export default function RegisterPage() {
       [field]: undefined,
     }));
 
-    setServerMessage("");
+    setMessage("");
+    setIsSuccess(false);
   }
 
   async function handleSubmit(
@@ -75,29 +81,46 @@ export default function RegisterPage() {
   ): Promise<void> {
     event.preventDefault();
 
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    if (!apiUrl) {
+      setMessage("Frontend API URL is not configured.");
+      setIsSuccess(false);
+      return;
+    }
+
     setIsSubmitting(true);
     setErrors({});
-    setServerMessage("");
+    setMessage("");
+    setIsSuccess(false);
 
     try {
-      const response = await fetch("/api/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+      const response = await fetch(
+        `${apiUrl}/api/auth/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
         },
-        body: JSON.stringify(formData),
-      });
+      );
 
-      const result: RegisterResponse = await response.json();
+      const result: RegisterApiResponse =
+        await response.json();
 
       if (!response.ok) {
         setErrors(result.errors ?? {});
-        setServerMessage(result.message);
+        setMessage(
+          result.message || "Unable to create the account.",
+        );
+
         return;
       }
 
+      setIsSuccess(true);
+      setMessage("Account created successfully.");
       setFormData(initialFormData);
-      setServerMessage(result.message);
 
       setTimeout(() => {
         router.push("/login");
@@ -105,8 +128,8 @@ export default function RegisterPage() {
     } catch (error) {
       console.error("Registration request failed:", error);
 
-      setServerMessage(
-        "Unable to connect to the server. Please try again.",
+      setMessage(
+        "Unable to connect to the backend. Make sure the Express server is running.",
       );
     } finally {
       setIsSubmitting(false);
@@ -116,7 +139,6 @@ export default function RegisterPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="grid min-h-screen lg:grid-cols-2">
-        {/* Left side */}
         <section className="hidden bg-slate-900 px-12 py-16 text-white lg:flex lg:flex-col lg:justify-between">
           <Link href="/" className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600">
@@ -138,35 +160,40 @@ export default function RegisterPage() {
             </h1>
 
             <p className="mt-6 text-lg leading-8 text-slate-300">
-              Join learners who are developing career-focused skills through
-              practical courses, experienced instructors, and flexible
-              learning.
+              Join learners developing career-focused skills
+              through practical courses and experienced instructors.
             </p>
 
             <div className="mt-10 grid grid-cols-3 gap-4">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <p className="text-2xl font-bold">150+</p>
-                <p className="mt-1 text-sm text-slate-400">Courses</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  Courses
+                </p>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <p className="text-2xl font-bold">12K+</p>
-                <p className="mt-1 text-sm text-slate-400">Learners</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  Learners
+                </p>
               </div>
 
               <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <p className="text-2xl font-bold">50+</p>
-                <p className="mt-1 text-sm text-slate-400">Instructors</p>
+                <p className="mt-1 text-sm text-slate-400">
+                  Instructors
+                </p>
               </div>
             </div>
           </div>
 
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} EduSpark. All rights reserved.
+            © {new Date().getFullYear()} EduSpark. All rights
+            reserved.
           </p>
         </section>
 
-        {/* Right side */}
         <section className="flex items-center justify-center px-4 py-12 sm:px-8 lg:px-12">
           <div className="w-full max-w-lg">
             <Link
@@ -182,22 +209,23 @@ export default function RegisterPage() {
               </span>
             </Link>
 
-            <div>
-              <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
-                Create Account
-              </p>
+            <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
+              Create Account
+            </p>
 
-              <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-                Join EduSpark
-              </h2>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              Join EduSpark
+            </h2>
 
-              <p className="mt-3 text-slate-600">
-                Create your account and start learning practical skills.
-              </p>
-            </div>
+            <p className="mt-3 text-slate-600">
+              Create your account and start learning practical
+              skills.
+            </p>
 
-            <form onSubmit={handleSubmit} className="mt-8 space-y-5">
-              {/* Name */}
+            <form
+              onSubmit={handleSubmit}
+              className="mt-8 space-y-5"
+            >
               <div>
                 <label
                   htmlFor="name"
@@ -232,7 +260,6 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Email */}
               <div>
                 <label
                   htmlFor="email"
@@ -267,7 +294,6 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Password */}
               <div>
                 <label
                   htmlFor="password"
@@ -297,10 +323,12 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() =>
-                      setShowPassword((currentValue) => !currentValue)
+                      setShowPassword((current) => !current)
                     }
                     aria-label={
-                      showPassword ? "Hide password" : "Show password"
+                      showPassword
+                        ? "Hide password"
+                        : "Show password"
                     }
                     className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-700"
                   >
@@ -319,7 +347,6 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {/* Confirm password */}
               <div>
                 <label
                   htmlFor="confirmPassword"
@@ -336,10 +363,15 @@ export default function RegisterPage() {
 
                   <input
                     id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
+                    type={
+                      showConfirmPassword ? "text" : "password"
+                    }
                     value={formData.confirmPassword}
                     onChange={(event) =>
-                      updateField("confirmPassword", event.target.value)
+                      updateField(
+                        "confirmPassword",
+                        event.target.value,
+                      )
                     }
                     placeholder="Confirm your password"
                     autoComplete="new-password"
@@ -350,7 +382,7 @@ export default function RegisterPage() {
                     type="button"
                     onClick={() =>
                       setShowConfirmPassword(
-                        (currentValue) => !currentValue,
+                        (current) => !current,
                       )
                     }
                     aria-label={
@@ -375,15 +407,15 @@ export default function RegisterPage() {
                 )}
               </div>
 
-              {serverMessage && (
+              {message && (
                 <div
                   className={`rounded-xl border px-4 py-3 text-sm ${
-                    serverMessage.includes("successfully")
+                    isSuccess
                       ? "border-green-200 bg-green-50 text-green-700"
                       : "border-red-200 bg-red-50 text-red-700"
                   }`}
                 >
-                  {serverMessage}
+                  {message}
                 </div>
               )}
 
@@ -392,7 +424,9 @@ export default function RegisterPage() {
                 disabled={isSubmitting}
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
               >
-                {isSubmitting ? "Creating account..." : "Create Account"}
+                {isSubmitting
+                  ? "Creating account..."
+                  : "Create Account"}
 
                 {!isSubmitting && <ArrowRight size={19} />}
               </button>
