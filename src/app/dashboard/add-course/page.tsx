@@ -1,5 +1,5 @@
 "use client";
-
+import { getAuthHeaders } from "@/lib/auth";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -124,15 +124,20 @@ export default function AddCoursePage() {
     };
 
     try {
-      const response = await fetch(`${apiUrl}/api/courses`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+     const response = await fetch(`${apiUrl}/api/courses`, {
+  method: "POST",
+  headers: getAuthHeaders(),
+  body: JSON.stringify(payload),
+});
 
       const result: ApiResponse = await response.json();
+      if (response.status === 401) {
+  localStorage.removeItem("eduspark_access_token");
+  localStorage.removeItem("eduspark_user");
+
+  router.push("/login");
+  return;
+}
 
       if (!response.ok) {
         const firstValidationError = result.errors
