@@ -7,7 +7,7 @@ import {
   BookOpen,
   Eye,
   LoaderCircle,
-  RefreshCw,
+  Pencil,
   Trash2,
 } from "lucide-react";
 import { useState } from "react";
@@ -146,10 +146,9 @@ export default function ManageCoursesClient({
         </div>
       ) : (
         <>
-          {/* Desktop table */}
           <div className="hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:block">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[900px]">
+              <table className="w-full min-w-[950px]">
                 <thead className="bg-slate-100">
                   <tr>
                     <th className="px-5 py-4 text-left text-sm font-semibold text-slate-700">
@@ -236,6 +235,14 @@ export default function ManageCoursesClient({
                             <Eye size={18} />
                           </Link>
 
+                          <Link
+                            href={`/dashboard/edit-course/${course._id}`}
+                            aria-label={`Edit ${course.title}`}
+                            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-amber-200 text-amber-600 transition hover:bg-amber-50"
+                          >
+                            <Pencil size={18} />
+                          </Link>
+
                           <button
                             type="button"
                             onClick={() =>
@@ -265,7 +272,6 @@ export default function ManageCoursesClient({
             </div>
           </div>
 
-          {/* Mobile and tablet cards */}
           <div className="grid gap-5 lg:hidden">
             {courses.map((course: Course) => (
               <article
@@ -323,13 +329,21 @@ export default function ManageCoursesClient({
                     </div>
                   </div>
 
-                  <div className="mt-5 grid grid-cols-2 gap-3">
+                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
                     <Link
                       href={`/courses/${course._id}`}
                       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 font-semibold text-slate-700 transition hover:border-blue-600 hover:text-blue-600"
                     >
                       <Eye size={17} />
                       View
+                    </Link>
+
+                    <Link
+                      href={`/dashboard/edit-course/${course._id}`}
+                      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-amber-200 font-semibold text-amber-600 transition hover:bg-amber-50"
+                    >
+                      <Pencil size={17} />
+                      Edit
                     </Link>
 
                     <button
