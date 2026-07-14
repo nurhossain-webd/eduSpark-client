@@ -10,6 +10,8 @@ import {
 } from "lucide-react";
 import { FormEvent, useState } from "react";
 
+import { getAuthHeaders } from "@/lib/auth";
+
 interface Course {
   _id: string;
   title: string;
@@ -105,6 +107,11 @@ export default function EditCourseForm({
     setIsSuccess(false);
   }
 
+  function clearStoredAuthentication(): void {
+    localStorage.removeItem("eduspark_access_token");
+    localStorage.removeItem("eduspark_user");
+  }
+
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
   ): Promise<void> {
@@ -115,6 +122,21 @@ export default function EditCourseForm({
     if (!apiUrl) {
       setMessage("Frontend API URL is not configured.");
       setIsSuccess(false);
+      return;
+    }
+
+    const accessToken = localStorage.getItem(
+      "eduspark_access_token",
+    );
+
+    if (!accessToken) {
+      setMessage("Please sign in before editing a course.");
+      setIsSuccess(false);
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 800);
+
       return;
     }
 
@@ -144,14 +166,30 @@ export default function EditCourseForm({
         `${apiUrl}/api/courses/${course._id}`,
         {
           method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify(payload),
         },
       );
 
       const result: ApiResponse = await response.json();
+
+      if (response.status === 401) {
+        clearStoredAuthentication();
+
+        setMessage(
+          result.message ||
+            "Your login session has expired. Please sign in again.",
+        );
+
+        setIsSuccess(false);
+
+        setTimeout(() => {
+          router.push("/login");
+          router.refresh();
+        }, 1000);
+
+        return;
+      }
 
       if (!response.ok) {
         const firstValidationError = result.errors
@@ -164,6 +202,7 @@ export default function EditCourseForm({
             "Unable to update the course.",
         );
 
+        setIsSuccess(false);
         return;
       }
 
@@ -180,6 +219,8 @@ export default function EditCourseForm({
       setMessage(
         "Unable to connect to the backend. Make sure the Express server is running.",
       );
+
+      setIsSuccess(false);
     } finally {
       setIsSubmitting(false);
     }
@@ -238,7 +279,7 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField("title", event.target.value)
                   }
-                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -263,7 +304,7 @@ export default function EditCourseForm({
                       event.target.value,
                     )
                   }
-                  className="w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="w-full resize-none rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
 
                 <p className="mt-1 text-right text-xs text-slate-500">
@@ -288,7 +329,7 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField("description", event.target.value)
                   }
-                  className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -307,7 +348,7 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField("category", event.target.value)
                   }
-                  className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 >
                   {categories.map((category: string) => (
                     <option key={category} value={category}>
@@ -331,13 +372,16 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField(
                       "level",
-                      event.target.value as CourseFormData["level"],
+                      event.target
+                        .value as CourseFormData["level"],
                     )
                   }
-                  className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-12 w-full rounded-xl border border-slate-300 bg-white px-4 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 >
                   <option value="Beginner">Beginner</option>
-                  <option value="Intermediate">Intermediate</option>
+                  <option value="Intermediate">
+                    Intermediate
+                  </option>
                   <option value="Advanced">Advanced</option>
                 </select>
               </div>
@@ -358,7 +402,7 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField("instructor", event.target.value)
                   }
-                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -378,7 +422,7 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField("language", event.target.value)
                   }
-                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -400,7 +444,7 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField("price", event.target.value)
                   }
-                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -420,7 +464,7 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField("duration", event.target.value)
                   }
-                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -442,7 +486,7 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField("lessons", event.target.value)
                   }
-                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -464,7 +508,7 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField("rating", event.target.value)
                   }
-                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -485,7 +529,7 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField("students", event.target.value)
                   }
-                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -505,7 +549,7 @@ export default function EditCourseForm({
                   onChange={(event) =>
                     updateField("image", event.target.value)
                   }
-                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-12 w-full rounded-xl border border-slate-300 px-4 text-slate-900 outline-none transition focus:border-blue-600 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
 
@@ -515,7 +559,10 @@ export default function EditCourseForm({
                     type="checkbox"
                     checked={formData.featured}
                     onChange={(event) =>
-                      updateField("featured", event.target.checked)
+                      updateField(
+                        "featured",
+                        event.target.checked,
+                      )
                     }
                     className="mt-1 h-4 w-4 accent-blue-600"
                   />

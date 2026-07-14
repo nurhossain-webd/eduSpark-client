@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+import { getAuthHeaders } from "@/lib/auth";
+
 interface Course {
   _id: string;
   title: string;
@@ -46,6 +48,11 @@ export default function ManageCoursesClient({
   const [message, setMessage] = useState<string>("");
   const [isError, setIsError] = useState<boolean>(false);
 
+  function clearStoredAuthentication(): void {
+    localStorage.removeItem("eduspark_access_token");
+    localStorage.removeItem("eduspark_user");
+  }
+
   async function handleDelete(course: Course): Promise<void> {
     const confirmed = window.confirm(
       `Are you sure you want to delete "${course.title}"?`,
@@ -63,6 +70,21 @@ export default function ManageCoursesClient({
       return;
     }
 
+    const accessToken = localStorage.getItem(
+      "eduspark_access_token",
+    );
+
+    if (!accessToken) {
+      setMessage("Please sign in before deleting a course.");
+      setIsError(true);
+
+      setTimeout(() => {
+        router.push("/login");
+      }, 800);
+
+      return;
+    }
+
     setDeletingId(course._id);
     setMessage("");
     setIsError(false);
@@ -72,10 +94,30 @@ export default function ManageCoursesClient({
         `${apiUrl}/api/courses/${course._id}`,
         {
           method: "DELETE",
+          headers: getAuthHeaders(),
         },
       );
 
-      const result: DeleteApiResponse = await response.json();
+      const result: DeleteApiResponse =
+        await response.json();
+
+      if (response.status === 401) {
+        clearStoredAuthentication();
+
+        setMessage(
+          result.message ||
+            "Your login session has expired. Please sign in again.",
+        );
+
+        setIsError(true);
+
+        setTimeout(() => {
+          router.push("/login");
+          router.refresh();
+        }, 1000);
+
+        return;
+      }
 
       if (!response.ok) {
         setMessage(
@@ -94,6 +136,7 @@ export default function ManageCoursesClient({
 
       setMessage("Course deleted successfully.");
       setIsError(false);
+
       router.refresh();
     } catch (error) {
       console.error("Delete course request failed:", error);
@@ -101,6 +144,7 @@ export default function ManageCoursesClient({
       setMessage(
         "Unable to connect to the backend. Make sure the Express server is running.",
       );
+
       setIsError(true);
     } finally {
       setDeletingId(null);
@@ -133,8 +177,8 @@ export default function ManageCoursesClient({
           </h2>
 
           <p className="mx-auto mt-3 max-w-xl leading-7 text-slate-600">
-            Add your first course to start managing EduSpark
-            course content.
+            Add your first course to start managing EduSpark course
+            content.
           </p>
 
           <Link
