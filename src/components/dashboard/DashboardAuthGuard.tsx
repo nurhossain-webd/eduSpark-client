@@ -21,6 +21,12 @@ interface AuthUser {
   role: "user" | "admin";
 }
 
+interface CurrentUserApiResponse {
+  success: boolean;
+  message: string;
+  data?: AuthUser;
+}
+
 type AccessStatus =
   | "checking"
   | "allowed"
@@ -34,40 +40,78 @@ export default function DashboardAuthGuard({
   const [accessStatus, setAccessStatus] =
     useState<AccessStatus>("checking");
 
+  function clearStoredAuthentication(): void {
+    localStorage.removeItem("eduspark_access_token");
+    localStorage.removeItem("eduspark_user");
+  }
+
   useEffect(() => {
-    const accessToken = localStorage.getItem(
-      "eduspark_access_token",
-    );
+    async function verifyCurrentUser(): Promise<void> {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-    const storedUser = localStorage.getItem(
-      "eduspark_user",
-    );
+      const accessToken = localStorage.getItem(
+        "eduspark_access_token",
+      );
 
-    if (!accessToken || !storedUser) {
-      localStorage.removeItem("eduspark_access_token");
-      localStorage.removeItem("eduspark_user");
-
-      router.replace("/login");
-      return;
-    }
-
-    try {
-      const user: AuthUser = JSON.parse(storedUser);
-
-      if (user.role !== "admin") {
-        setAccessStatus("forbidden");
+      if (!apiUrl || !accessToken) {
+        clearStoredAuthentication();
+        router.replace("/login");
         return;
       }
 
-      setAccessStatus("allowed");
-    } catch (error) {
-      console.error("Invalid stored user data:", error);
+      try {
+        const response = await fetch(
+          `${apiUrl}/api/auth/me`,
+          {
+            method: "GET",
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+            cache: "no-store",
+          },
+        );
 
-      localStorage.removeItem("eduspark_access_token");
-      localStorage.removeItem("eduspark_user");
+        const result: CurrentUserApiResponse =
+          await response.json();
 
-      router.replace("/login");
+        if (response.status === 401) {
+          clearStoredAuthentication();
+          router.replace("/login");
+          return;
+        }
+
+        if (!response.ok || !result.data) {
+          throw new Error(
+            result.message ||
+              "Unable to verify the current user.",
+          );
+        }
+
+        localStorage.setItem(
+          "eduspark_user",
+          JSON.stringify(result.data),
+        );
+
+        window.dispatchEvent(new Event("auth-changed"));
+
+        if (result.data.role !== "admin") {
+          setAccessStatus("forbidden");
+          return;
+        }
+
+        setAccessStatus("allowed");
+      } catch (error) {
+        console.error(
+          "Dashboard authentication check failed:",
+          error,
+        );
+
+        clearStoredAuthentication();
+        router.replace("/login");
+      }
     }
+
+    void verifyCurrentUser();
   }, [router]);
 
   if (accessStatus === "checking") {
@@ -80,7 +124,7 @@ export default function DashboardAuthGuard({
           />
 
           <p className="mt-4 font-semibold text-slate-700">
-            Checking administrator access...
+            Verifying administrator access...
           </p>
         </div>
       </main>
@@ -104,9 +148,8 @@ export default function DashboardAuthGuard({
           </h1>
 
           <p className="mt-4 leading-7 text-slate-600">
-            Your account can browse EduSpark courses, but it does
-            not have permission to access the course management
-            dashboard.
+            Your account is authenticated, but it does not have
+            permission to access the course management dashboard.
           </p>
 
           <div className="mt-7 grid gap-3 sm:grid-cols-2">
