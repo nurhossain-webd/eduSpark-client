@@ -3,11 +3,10 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  BookOpen,
+  GraduationCap,
   LayoutDashboard,
   LogOut,
   Menu,
-  Sparkles,
   UserRound,
   X,
 } from "lucide-react";
@@ -51,7 +50,7 @@ const publicNavItems: NavItem[] = [
   },
 ];
 
-const authenticatedNavItems: NavItem[] = [
+const userNavItems: NavItem[] = [
   {
     label: "Home",
     href: "/",
@@ -59,6 +58,33 @@ const authenticatedNavItems: NavItem[] = [
   {
     label: "Courses",
     href: "/courses",
+  },
+  {
+    label: "My Courses",
+    href: "/my-courses",
+  },
+  {
+    label: "About",
+    href: "/about",
+  },
+  {
+    label: "Blog",
+    href: "/blog",
+  },
+];
+
+const adminNavItems: NavItem[] = [
+  {
+    label: "Home",
+    href: "/",
+  },
+  {
+    label: "Courses",
+    href: "/courses",
+  },
+  {
+    label: "My Courses",
+    href: "/my-courses",
   },
   {
     label: "Dashboard",
@@ -72,10 +98,6 @@ const authenticatedNavItems: NavItem[] = [
     label: "Manage Courses",
     href: "/dashboard/manage-courses",
   },
-  {
-    label: "About",
-    href: "/about",
-  },
 ];
 
 export default function Navbar() {
@@ -87,44 +109,51 @@ export default function Navbar() {
   const [isAuthChecked, setIsAuthChecked] =
     useState<boolean>(false);
 
-  useEffect(() => {
-    function loadStoredUser(): void {
-      const accessToken = localStorage.getItem(
-        "eduspark_access_token",
-      );
+  function loadStoredUser(): void {
+    const accessToken = localStorage.getItem(
+      "eduspark_access_token",
+    );
 
-      const storedUser = localStorage.getItem(
-        "eduspark_user",
-      );
+    const storedUser = localStorage.getItem("eduspark_user");
 
-      if (!accessToken || !storedUser) {
-        setUser(null);
-        setIsAuthChecked(true);
-        return;
-      }
-
-      try {
-        const parsedUser: AuthUser = JSON.parse(storedUser);
-
-        setUser(parsedUser);
-      } catch (error) {
-        console.error("Unable to read stored user:", error);
-
-        localStorage.removeItem("eduspark_access_token");
-        localStorage.removeItem("eduspark_user");
-
-        setUser(null);
-      } finally {
-        setIsAuthChecked(true);
-      }
+    if (!accessToken || !storedUser) {
+      setUser(null);
+      setIsAuthChecked(true);
+      return;
     }
 
+    try {
+      const parsedUser = JSON.parse(storedUser) as AuthUser;
+
+      setUser(parsedUser);
+    } catch (error) {
+      console.error("Unable to read stored user:", error);
+
+      localStorage.removeItem("eduspark_access_token");
+      localStorage.removeItem("eduspark_user");
+
+      setUser(null);
+    } finally {
+      setIsAuthChecked(true);
+    }
+  }
+
+  useEffect(() => {
     loadStoredUser();
 
-    window.addEventListener("storage", loadStoredUser);
+    function handleAuthChange(): void {
+      loadStoredUser();
+    }
+
+    window.addEventListener("storage", handleAuthChange);
+    window.addEventListener("auth-changed", handleAuthChange);
 
     return () => {
-      window.removeEventListener("storage", loadStoredUser);
+      window.removeEventListener("storage", handleAuthChange);
+      window.removeEventListener(
+        "auth-changed",
+        handleAuthChange,
+      );
     };
   }, [pathname]);
 
@@ -147,13 +176,25 @@ export default function Navbar() {
     setUser(null);
     closeMenu();
 
+    window.dispatchEvent(new Event("auth-changed"));
+
     router.push("/");
     router.refresh();
   }
 
-  const navItems = user
-    ? authenticatedNavItems
-    : publicNavItems;
+  function getNavigationItems(): NavItem[] {
+    if (!user) {
+      return publicNavItems;
+    }
+
+    if (user.role === "admin") {
+      return adminNavItems;
+    }
+
+    return userNavItems;
+  }
+
+  const navItems = getNavigationItems();
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -161,22 +202,20 @@ export default function Navbar() {
         <nav className="flex min-h-16 items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2"
             onClick={closeMenu}
+            className="flex items-center gap-2"
           >
             <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white">
-              <Sparkles size={20} />
+              <GraduationCap size={21} />
             </span>
 
             <span className="text-xl font-bold text-slate-900">
               Edu
-              <span className="text-blue-600">
-                Spark
-              </span>
+              <span className="text-blue-600">Spark</span>
             </span>
           </Link>
 
-          <div className="hidden items-center gap-6 xl:flex">
+          <div className="hidden items-center gap-5 xl:flex">
             {navItems.map((item: NavItem) => {
               const isActive = isActiveRoute(item.href);
 
@@ -217,13 +256,15 @@ export default function Navbar() {
                   </div>
                 </div>
 
-                <Link
-                  href="/dashboard"
-                  className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition hover:border-blue-600 hover:text-blue-600"
-                >
-                  <LayoutDashboard size={17} />
-                  Dashboard
-                </Link>
+                {user.role === "admin" && (
+                  <Link
+                    href="/dashboard"
+                    className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-700 transition hover:border-blue-600 hover:text-blue-600"
+                  >
+                    <LayoutDashboard size={17} />
+                    Dashboard
+                  </Link>
+                )}
 
                 <button
                   type="button"
@@ -266,11 +307,7 @@ export default function Navbar() {
             aria-expanded={isMenuOpen}
             className="rounded-lg p-2 text-slate-700 transition hover:bg-slate-100 xl:hidden"
           >
-            {isMenuOpen ? (
-              <X size={24} />
-            ) : (
-              <Menu size={24} />
-            )}
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </nav>
 
@@ -289,6 +326,10 @@ export default function Navbar() {
 
                   <p className="truncate text-sm text-slate-500">
                     {user.email}
+                  </p>
+
+                  <p className="mt-1 text-xs font-semibold capitalize text-blue-600">
+                    {user.role}
                   </p>
                 </div>
               </div>
