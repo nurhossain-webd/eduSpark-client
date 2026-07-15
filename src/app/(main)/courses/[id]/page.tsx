@@ -13,6 +13,7 @@ import {
   Star,
   Users,
 } from "lucide-react";
+import RelatedCourses from "@/components/courses/RelatedCourses";
 
 import CourseEnrollButton from "@/components/courses/CourseEnrollButton";
 import Container from "@/components/ui/Container";
@@ -308,7 +309,12 @@ export default async function CourseDetailsPage({
             </aside>
           </div>
         </Container>
-      </section>
+            </section>
+
+      <RelatedCourses
+        currentCourseId={course._id}
+        category={course.category}
+      />
     </main>
   );
 }
