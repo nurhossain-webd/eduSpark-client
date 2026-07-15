@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 
+import CourseEnrollButton from "@/components/courses/CourseEnrollButton";
 import Container from "@/components/ui/Container";
 
 interface Course {
@@ -254,12 +255,9 @@ export default async function CourseDetailsPage({
                   ${course.price}
                 </p>
 
-                <button
-                  type="button"
-                  className="mt-6 min-h-12 w-full rounded-xl bg-blue-600 px-5 font-semibold text-white transition hover:bg-blue-700"
-                >
-                  Enroll Now
-                </button>
+                <div className="mt-6">
+                  <CourseEnrollButton courseId={course._id} />
+                </div>
 
                 <div className="mt-6 space-y-4 border-t border-slate-200 pt-6">
                   <div className="flex items-center justify-between gap-4">
