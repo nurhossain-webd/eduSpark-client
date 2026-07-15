@@ -1,7 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import {
+  useRouter,
+  useSearchParams,
+} from "next/navigation";
 import {
   ArrowRight,
   Eye,
@@ -47,6 +50,7 @@ const initialFormData: LoginFormData = {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [formData, setFormData] =
     useState<LoginFormData>(initialFormData);
@@ -78,16 +82,25 @@ export default function LoginPage() {
     setIsSuccess(false);
   }
 
-  function fillDemoCredentials(): void {
+  function fillDemoCredentials(
+  accountType: "user" | "admin",
+): void {
+  if (accountType === "admin") {
+    setFormData({
+      email: "admin@eduspark.com",
+      password: "Admin123!",
+    });
+  } else {
     setFormData({
       email: "user@eduspark.com",
       password: "User123!",
     });
-
-    setErrors({});
-    setMessage("");
-    setIsSuccess(false);
   }
+
+  setErrors({});
+  setMessage("");
+  setIsSuccess(false);
+}
 
   async function handleSubmit(
     event: FormEvent<HTMLFormElement>,
@@ -144,10 +157,24 @@ export default function LoginPage() {
       setIsSuccess(true);
       setMessage("Login successful. Redirecting...");
 
-      setTimeout(() => {
-        router.push("/dashboard");
-        router.refresh();
-      }, 800);
+   const requestedRedirect = searchParams.get("redirect");
+
+const safeRedirect =
+  requestedRedirect?.startsWith("/") &&
+  !requestedRedirect.startsWith("//")
+    ? requestedRedirect
+    : null;
+
+const destination =
+  safeRedirect ??
+  (result.data.user.role === "admin"
+    ? "/dashboard"
+    : "/my-courses");
+
+setTimeout(() => {
+  router.push(destination);
+  router.refresh();
+}, 800);
     } catch (error) {
       console.error("Login request failed:", error);
 
@@ -367,14 +394,25 @@ export default function LoginPage() {
                 {!isSubmitting && <ArrowRight size={19} />}
               </button>
 
-              <button
-                type="button"
-                onClick={fillDemoCredentials}
-                disabled={isSubmitting}
-                className="inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 transition hover:border-blue-600 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                Use Demo Credentials
-              </button>
+             <div className="grid gap-3 sm:grid-cols-2">
+  <button
+    type="button"
+    onClick={() => fillDemoCredentials("user")}
+    disabled={isSubmitting}
+    className="inline-flex min-h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 transition hover:border-blue-600 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-60"
+  >
+    Demo User
+  </button>
+
+  <button
+    type="button"
+    onClick={() => fillDemoCredentials("admin")}
+    disabled={isSubmitting}
+    className="inline-flex min-h-12 items-center justify-center rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 font-semibold text-blue-700 transition hover:border-blue-600 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+  >
+    Demo Admin
+  </button>
+</div>
             </form>
 
             <p className="mt-7 text-center text-sm text-slate-600">
