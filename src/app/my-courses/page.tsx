@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from "react";
 
 import { getAuthHeaders } from "@/lib/auth";
+import BackToHomeButton from "@/components/ui/BackToHomeButton";
 
 interface Course {
   _id: string;
@@ -272,6 +273,7 @@ export default function MyCoursesPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <section className="border-b border-slate-200 bg-white py-9">
+        <div className="text-right mx-5"><BackToHomeButton></BackToHomeButton></div>
         <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
           <p className="text-sm font-semibold uppercase tracking-wider text-blue-600">
             My Learning

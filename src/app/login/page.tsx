@@ -14,6 +14,7 @@ import {
   Mail,
 } from "lucide-react";
 import { FormEvent, useState } from "react";
+import BackToHomeButton from "@/components/ui/BackToHomeButton";
 
 interface LoginFormData {
   email: string;
@@ -191,6 +192,7 @@ setTimeout(() => {
       <div className="grid min-h-screen lg:grid-cols-2">
         {/* Left information panel */}
         <section className="hidden bg-slate-900 px-12 py-16 text-white lg:flex lg:flex-col lg:justify-between">
+            <BackToHomeButton></BackToHomeButton>
           <Link href="/" className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-600">
               <GraduationCap size={25} />
