@@ -14,9 +14,19 @@ import {
   Users,
 } from "lucide-react";
 import RelatedCourses from "@/components/courses/RelatedCourses";
+import CourseReviews from "@/components/courses/CourseReviews";
 
 import CourseEnrollButton from "@/components/courses/CourseEnrollButton";
 import Container from "@/components/ui/Container";
+
+interface CourseReview {
+  _id?: string;
+  user: string;
+  studentName: string;
+  rating: number;
+  comment: string;
+  createdAt: string;
+}
 
 interface Course {
   _id: string;
@@ -28,6 +38,8 @@ interface Course {
   language: string;
   price: number;
   rating: number;
+  totalReviews: number;
+reviews: CourseReview[];
   students: number;
   duration: string;
   lessons: number;
@@ -244,6 +256,14 @@ export default async function CourseDetailsPage({
                   </div>
                 </div>
               </article>
+              <CourseReviews
+  courseId={course._id}
+  reviews={course.reviews ?? []}
+  rating={course.rating ?? 0}
+  totalReviews={
+    course.totalReviews ?? course.reviews?.length ?? 0
+  }
+/>
             </div>
 
             <aside className="lg:sticky lg:top-24 lg:self-start">
