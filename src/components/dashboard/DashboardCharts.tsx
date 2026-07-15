@@ -136,27 +136,26 @@ export default function DashboardCharts({
                   paddingAngle={3}
                   labelLine={false}
                   label={({
-                    cx,
-                    cy,
-                    midAngle,
-                    innerRadius,
-                    outerRadius,
-                    percent,
+                    cx = 0,
+                    cy = 0,
+                    midAngle = 0,
+                    innerRadius = 0,
+                    outerRadius = 0,
+                    percent = 0,
                   }) => {
                     const RADIAN = Math.PI / 180;
+
                     const radius =
                       innerRadius +
                       (outerRadius - innerRadius) * 0.5;
 
                     const x =
                       cx +
-                      radius *
-                        Math.cos(-midAngle * RADIAN);
+                      radius * Math.cos(-midAngle * RADIAN);
 
                     const y =
                       cy +
-                      radius *
-                        Math.sin(-midAngle * RADIAN);
+                      radius * Math.sin(-midAngle * RADIAN);
 
                     return (
                       <text
@@ -168,7 +167,7 @@ export default function DashboardCharts({
                         fontSize={13}
                         fontWeight={700}
                       >
-                        {`${Math.round((percent ?? 0) * 100)}%`}
+                        {`${Math.round(percent * 100)}%`}
                       </text>
                     );
                   }}
